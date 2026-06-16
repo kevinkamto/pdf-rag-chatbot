@@ -93,6 +93,19 @@ Backend and frontend have separate env files:
 `MANAGEMENT_SECRET` must be identical in both so the frontend can call the
 backend's protected document endpoints.
 
+### Tunable backend settings
+
+These have sensible defaults; override them in `backend/.env` as needed:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `TOP_K` | `4` | Chunks retrieved per query (1..20). |
+| `USE_DEMO_CORPUS` | `true` | Seed the bundled demo corpus when the knowledge base is empty. |
+| `FALLBACK_CONTACT` | support email | Contact offered when the answer is not in context. |
+| `MAX_UPLOAD_MB` | `20` | Largest accepted PDF upload. |
+| `CHUNK_TOKENS` | `800` | Token budget per chunk. |
+| `CHUNK_OVERLAP_TOKENS` | `100` | Overlap carried between chunks (must be `< CHUNK_TOKENS`). |
+
 ## Checks
 
 ```bash
