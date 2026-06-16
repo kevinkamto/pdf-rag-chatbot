@@ -15,6 +15,17 @@ box.
 See [SPEC.md](SPEC.md) for requirements and [CLAUDE.md](CLAUDE.md) for working
 conventions.
 
+## Contents
+
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [1. Backend](#1-backend)
+- [2. Frontend](#2-frontend)
+- [3. Embedding into a website](#3-embedding-into-a-website)
+- [Deploying with Docker (backend)](#deploying-with-docker-backend)
+- [Environment variables](#environment-variables)
+- [Checks](#checks)
+
 ## Architecture
 
 ```
