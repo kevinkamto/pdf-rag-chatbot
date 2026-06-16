@@ -128,6 +128,18 @@ Infrastructure:
 - Do not add features outside SPEC.md without flagging them first. Multi-PDF support, authentication, multi-tenant logic, and an admin dashboard are explicitly out of scope for v1; see SPEC.md section on scope.
 - Keep commits small and scoped to one logical change.
 
+## Production Quality Bar
+
+All source code in this repo is production grade, even though the scope is a small MVP. Production quality here means correct and robust, not gold plated:
+
+- No placeholders, stubs, empty `TODO` bodies, commented-out code, or fake/mock data on real code paths. If something cannot be finished, raise it rather than leaving a stub behind.
+- Validate every external input (API bodies, env, PDF content, OpenAI and Qdrant responses) with Pydantic and handle the failure paths explicitly.
+- Handle errors deliberately: recover where you can, surface clear messages, and never swallow exceptions silently. External calls (OpenAI, Qdrant) have timeouts, retries where sensible, and graceful degradation.
+- Structured logging for operationally useful events; never log secrets.
+- Code is typed (mypy clean), linted and formatted (ruff and prettier clean), and covered by tests for the RAG pipeline and the API surface.
+- No secrets, keys, or hardcoded environment specifics in source; everything environment dependent comes through `Settings`.
+- "Simplest correct solution" still applies: production quality is robustness and clarity, not added abstraction or premature generalization. Reach for the `python-design-patterns` skill's KISS guidance before introducing a new layer.
+
 ## AI Output Rules (important, do not skip)
 
 - The chatbot must never produce an em-dash character in any generated reply. Enforce this two ways: state it directly in the system prompt sent to OpenAI, and add a defensive post-processing step on the backend that replaces any em-dash with a comma or period before the reply is returned to the frontend, in case the model ignores the instruction. Because replies stream, apply this safeguard to each streamed chunk as it is emitted, not only to the final assembled text.

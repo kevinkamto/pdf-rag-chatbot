@@ -123,6 +123,7 @@ Loaded through `pydantic-settings` (`Settings(BaseSettings)`):
 ## 12. Constraints
 
 - This is a fixed-scope, low-budget MVP. Resist adding functionality beyond this document without raising it first.
+- All source code is production grade: validated input, deliberate error handling, structured logging, type checking, linting, and tests, with no placeholders or mock data on real paths. Production quality means robustness, not extra abstraction (see the Production Quality Bar in CLAUDE.md).
 - Streaming responses are mandatory.
 - The MVP must work both with and without an ingested PDF (demo corpus fallback).
 - Qdrant runs as an external, already-installed server, configured only through env vars.
