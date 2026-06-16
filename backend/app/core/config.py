@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     openai_chat_model: str = "gpt-4o-mini"
     openai_embedding_model: str = "text-embedding-3-small"
-    embedding_dim: int = 1536
+    embedding_dim: int = Field(default=1536, ge=1)
 
     # Qdrant (external server)
     qdrant_url: str = "http://localhost:6333"
@@ -38,7 +39,7 @@ class Settings(BaseSettings):
     upload_dir: str = "./data/uploads"
 
     # Uploads / security
-    max_upload_mb: int = 20
+    max_upload_mb: int = Field(default=20, ge=1)
     management_secret: str = "change-me"
 
     # CORS
@@ -50,8 +51,8 @@ class Settings(BaseSettings):
     use_demo_corpus: bool = True
 
     # Chunking
-    chunk_tokens: int = 800
-    chunk_overlap_tokens: int = 100
+    chunk_tokens: int = Field(default=800, ge=1)
+    chunk_overlap_tokens: int = Field(default=100, ge=0)
 
     @field_validator("qdrant_api_key", mode="before")
     @classmethod
@@ -60,6 +61,17 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @model_validator(mode="after")
+    def _overlap_below_chunk_size(self) -> Self:
+        """Overlap must stay below chunk size, or chunking never advances."""
+        if self.chunk_overlap_tokens >= self.chunk_tokens:
+            raise ValueError(
+                "chunk_overlap_tokens must be less than chunk_tokens "
+                f"(got overlap={self.chunk_overlap_tokens}, "
+                f"size={self.chunk_tokens})"
+            )
+        return self
 
     @property
     def allowed_origins_list(self) -> list[str]:
