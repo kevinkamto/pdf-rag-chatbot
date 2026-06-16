@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__ = ["strip_em_dashes"]
+
 # Em-dash and related long dashes that must never appear in chatbot output.
 _DASH_REPLACEMENTS = {
     "—": ", ",  # em dash
