@@ -37,13 +37,13 @@ def async_retry(
                 except exceptions as exc:
                     last_error = exc
                     if attempt < attempts - 1:
-                        await asyncio.sleep(base_delay * (2**attempt))
                         logger.warning(
                             "event=retry func=%s attempt=%s error=%s",
                             func.__name__,
                             attempt + 1,
                             type(exc).__name__,
                         )
+                        await asyncio.sleep(base_delay * (2**attempt))
             assert last_error is not None
             raise last_error
 
