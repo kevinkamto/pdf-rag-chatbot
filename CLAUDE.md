@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository. Read SPEC.md alongside
 
 ## Project Overview
 
-A small, embeddable AI chatbot that answers questions from a single PDF knowledge base using OpenAI for generation and embeddings, Qdrant for vector search, and a lightweight SQLite log for conversation history. Replies stream token by token. The MVP runs out of the box with or without a client PDF: when no PDF has been ingested it falls back to a small bundled demo corpus so the full RAG path is always exercised and visibly working. This is a fixed-scope MVP built against a client job description with a small budget, not an enterprise system. Favor the simplest correct solution over abstraction for hypothetical future needs.
+A ChatGPT-like AI chatbot that answers questions from a managed set of PDF knowledge sources using OpenAI for generation and embeddings, Qdrant for vector search, and a lightweight SQLite log for conversation history. Replies stream token by token. The web app pairs a chat pane with a sidebar that lists the ingested PDFs and lets the operator add and remove them: adding a PDF ingests its context, removing a PDF deletes that document's vectors, so the knowledge base stays in sync with the sidebar. The same backend also powers a chat-only `embed.js` widget for embedding the chat into a client's existing website. The MVP runs out of the box with or without ingested PDFs: when the knowledge base is empty it falls back to a small bundled demo corpus so the full RAG path is always exercised and visibly working. This is a focused MVP, not an enterprise system. Favor the simplest correct solution over abstraction for hypothetical future needs.
 
 ## Tech Stack
 
@@ -55,9 +55,11 @@ Context7 MCP is installed locally. When implementing anything touching an extern
 project-root/
   frontend/
     app/
-      page.tsx
-      widget/
+      page.tsx            # ChatGPT-like app: sidebar + chat pane
+      widget/             # chat-only view served to embed.js
     components/
+      sidebar/            # PDF list with add/remove controls
+      chat/
       ui/                 # shadcn/ui components
     lib/
     public/
@@ -71,6 +73,7 @@ project-root/
       api/
         chat.py           # streaming /api/chat (SSE)
         conversations.py
+        documents.py      # list / upload (add context) / delete (remove context)
       core/
         config.py         # pydantic-settings BaseSettings, loads .env
         openai_client.py
@@ -79,13 +82,14 @@ project-root/
         pdf_processor.py
         rag_pipeline.py
         chat_service.py
+        document_service.py  # add: ingest; remove: delete vectors by document_id
       models/
         schemas.py        # Pydantic request/response + internal models
         db_models.py
       db/
         database.py
       data/
-        demo_corpus.md    # bundled sample knowledge base for no-PDF mode
+        demo_corpus.md    # bundled sample knowledge base for empty-KB mode
     scripts/
       ingest_pdf.py
     pyproject.toml        # deps + ruff + mypy config (uv-managed)
@@ -125,7 +129,7 @@ Infrastructure:
 - Configuration: a single `Settings(BaseSettings)` object loaded from `.env` via `pydantic-settings`; inject it rather than reading environment variables ad hoc.
 - TypeScript: strict mode, functional components, no `any`. Format with `prettier`.
 - Follow the installed skills for conventions in their domains.
-- Do not add features outside SPEC.md without flagging them first. Multi-PDF support, authentication, multi-tenant logic, and an admin dashboard are explicitly out of scope for v1; see SPEC.md section on scope.
+- Do not add features outside SPEC.md without flagging them first. Multi-PDF management is in scope (sidebar add/remove with live context sync). Authentication, multi-tenant logic, and an admin analytics dashboard are explicitly out of scope for v1; see SPEC.md section on scope.
 - Keep commits small and scoped to one logical change.
 
 ## Production Quality Bar
@@ -144,20 +148,21 @@ All source code in this repo is production grade, even though the scope is a sma
 
 - The chatbot must never produce an em-dash character in any generated reply. Enforce this two ways: state it directly in the system prompt sent to OpenAI, and add a defensive post-processing step on the backend that replaces any em-dash with a comma or period before the reply is returned to the frontend, in case the model ignores the instruction. Because replies stream, apply this safeguard to each streamed chunk as it is emitted, not only to the final assembled text.
 - This rule also applies to any user-facing text Claude Code writes by hand: UI copy, error messages, README content, commit messages. Use commas, periods, or parentheses instead of em-dashes everywhere in this project.
-- The chatbot must answer only from the retrieved context (the client PDF, or the demo corpus when no PDF is ingested). If the retrieved chunks do not contain the answer, the reply should say so plainly and point to the configured fallback contact rather than guessing or using outside knowledge.
+- The chatbot must answer only from the retrieved context (the ingested PDFs, or the demo corpus when the knowledge base is empty). If the retrieved chunks do not contain the answer, the reply should say so plainly and point to the configured fallback contact rather than guessing or using outside knowledge.
 
 ## Environment Variables
 
-See `.env.example` for the full list, loaded through `pydantic-settings`. Never commit a populated `.env` file or the source PDF to git (both are gitignored).
+See `.env.example` for the full list, loaded through `pydantic-settings`. Never commit a populated `.env` file or any source/uploaded PDF to git (both are gitignored).
 
 ## Security Notes
 
 - Restrict FastAPI CORS to the actual domain(s) the widget will be embedded on, plus localhost during development.
-- The PDF ingestion script is an operator-run tool, not a public upload endpoint. Do not expose a public file upload route in v1.
-- Do not log the OpenAI API key, the Qdrant API key, or any secret values.
+- The document-management endpoints (upload, delete, list) and the conversations endpoint are protected by a shared secret (`MANAGEMENT_SECRET`), not anonymous public routes. Validate every upload's content type and size (`MAX_UPLOAD_MB`) before processing. The chat endpoint stays public for the widget.
+- Do not log the OpenAI API key, the Qdrant API key, the management secret, or any secret values.
 
 ## Workflow Notes
 
-- Build the backend and verify the RAG pipeline (including streaming) with direct API calls (curl or a REST client) before wiring up the frontend widget. With no PDF ingested, the demo corpus makes this possible immediately.
-- Once the real PDF is available, write a short list of 5 to 8 questions drawn from its actual content and manually verify the chatbot answers them correctly and refuses gracefully outside that scope, before calling the feature done.
+- Build the backend and verify the RAG pipeline (including streaming and the add/remove document flow) with direct API calls (curl or a REST client) before wiring up the frontend. With no PDF ingested, the demo corpus makes this possible immediately.
+- Verify the sync invariant directly: after adding a PDF its content is retrievable, and after removing it that content no longer appears in answers (its vectors are gone).
+- Once real PDFs are available, write a short list of 5 to 8 questions drawn from their actual content and manually verify the chatbot answers them correctly and refuses gracefully outside that scope, before calling the feature done.
 - If a choice in SPEC.md (model names, deployment target) does not fit the actual hosting situation, raise it before building rather than silently changing it.
