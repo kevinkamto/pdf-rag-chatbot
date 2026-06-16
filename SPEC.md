@@ -94,7 +94,11 @@ Qdrant (external server, reached via env vars):
 
 ## 8. Environment Variables
 
-Loaded through `pydantic-settings` (`Settings(BaseSettings)`):
+Backend and frontend keep separate env files (`backend/.env.example` and
+`frontend/.env.example`); there is no shared root env. The frontend env holds
+`BACKEND_URL` and `MANAGEMENT_SECRET` (server-only, used by the Next route
+handlers). The backend variables below are loaded through `pydantic-settings`
+(`Settings(BaseSettings)`). `MANAGEMENT_SECRET` must match across both apps.
 
 - `OPENAI_API_KEY`
 - `OPENAI_CHAT_MODEL` (default: gpt-4o-mini)

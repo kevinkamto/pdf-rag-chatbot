@@ -57,16 +57,24 @@ project-root/
     app/
       page.tsx            # ChatGPT-like app: sidebar + chat pane
       widget/             # chat-only view served to embed.js
+      api/                # same-origin route handlers proxy to the backend,
+                          #   attaching MANAGEMENT_SECRET server-side
+        chat/route.ts     #   proxies the SSE stream
+        documents/        #   list / upload / delete proxies
     components/
       sidebar/            # PDF list with add/remove controls
       chat/
-      ui/                 # shadcn/ui components
+      ui/                 # shadcn-style components
     lib/
+      server.ts           # server-only backend config + secret
+      chatStream.ts       # client SSE reader
     public/
       embed.js
     package.json
     pnpm-lock.yaml
     .prettierrc
+    .env.example          # frontend env (BACKEND_URL, MANAGEMENT_SECRET)
+    .gitignore            # frontend-specific ignores
   backend/
     app/
       main.py
@@ -74,12 +82,16 @@ project-root/
         chat.py           # streaming /api/chat (SSE)
         conversations.py
         documents.py      # list / upload (add context) / delete (remove context)
+        deps.py           # shared-secret guard
       core/
         config.py         # pydantic-settings BaseSettings, loads .env
+        text.py           # em-dash safeguard
         openai_client.py
         qdrant_client.py
       services/
         pdf_processor.py
+        embeddings.py
+        vector_store.py
         rag_pipeline.py
         chat_service.py
         document_service.py  # add: ingest; remove: delete vectors by document_id
@@ -88,21 +100,28 @@ project-root/
         db_models.py
       db/
         database.py
+        repository.py
       data/
         demo_corpus.md    # bundled sample knowledge base for empty-KB mode
     scripts/
       ingest_pdf.py
+    tests/
     pyproject.toml        # deps + ruff + mypy config (uv-managed)
     uv.lock
     Dockerfile
+    .env.example          # backend env (OpenAI, Qdrant, secret, RAG)
+    .gitignore            # backend-specific ignores
   docker-compose.yml      # backend only; Qdrant is external
-  .env.example
-  .gitignore
+  .gitignore              # workspace-level ignores
   .claude/skills/         # project skills, real files, committed
   CLAUDE.md
   SPEC.md
   README.md
 ```
+
+Environment variables are split per app: `backend/.env.example` and
+`frontend/.env.example`. There is no root `.env`. `MANAGEMENT_SECRET` must match
+across both so the frontend can call the backend's protected endpoints.
 
 ## Development Commands
 
@@ -152,7 +171,7 @@ All source code in this repo is production grade, even though the scope is a sma
 
 ## Environment Variables
 
-See `.env.example` for the full list, loaded through `pydantic-settings`. Never commit a populated `.env` file or any source/uploaded PDF to git (both are gitignored).
+Backend and frontend have separate env files: `backend/.env.example` (loaded through `pydantic-settings`) and `frontend/.env.example` (server-only, used by the Next route handlers). `MANAGEMENT_SECRET` must be identical in both. Never commit a populated `.env`/`.env.local` or any source/uploaded PDF to git (all gitignored).
 
 ## Security Notes
 

@@ -1,0 +1,20 @@
+# Backend only. Qdrant runs as an external, already-installed server reached
+# through QDRANT_URL, so it is not part of this compose file.
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist the SQLite database and uploaded PDFs across restarts.
+      - backend-data:/app/data
+    restart: unless-stopped
+    # If Qdrant runs on the Docker host (for example in WSL), use the host
+    # gateway so QDRANT_URL can point at host.docker.internal.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  backend-data:
