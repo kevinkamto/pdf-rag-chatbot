@@ -1,0 +1,28 @@
+# Secrets and data (never commit)
+.env
+*.env
+!.env.example
+*.pdf
+*.sqlite
+*.sqlite3
+*.db
+
+# Python (uv)
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node (pnpm)
+node_modules/
+.next/
+out/
+.turbo/
+
+# Agent skills (.claude/skills/) are committed as real files; do not ignore.
+
+# OS / editor
+.DS_Store
+Thumbs.db
