@@ -14,7 +14,8 @@ class HealthResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
-    session_id: str | None = None
+    # Bounded to the conversations.session_id column width (String(64)).
+    session_id: str | None = Field(default=None, min_length=1, max_length=64)
 
 
 class MessageOut(BaseModel):
