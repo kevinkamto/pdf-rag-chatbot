@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -52,6 +52,14 @@ class Settings(BaseSettings):
     # Chunking
     chunk_tokens: int = 800
     chunk_overlap_tokens: int = 100
+
+    @field_validator("qdrant_api_key", mode="before")
+    @classmethod
+    def _blank_to_none(cls, value: object) -> object:
+        """Treat a blank QDRANT_API_KEY (common for local servers) as unset."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @property
     def allowed_origins_list(self) -> list[str]:
