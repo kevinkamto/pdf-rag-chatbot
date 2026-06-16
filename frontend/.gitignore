@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js build output
+.next/
+out/
+build/
+.turbo/
+
+# Production
+dist/
+
+# Environment
+.env*.local
+.env
+
+# Debug logs
+npm-debug.log*
+pnpm-debug.log*
+
+# TypeScript / Next generated
+*.tsbuildinfo
+next-env.d.ts
