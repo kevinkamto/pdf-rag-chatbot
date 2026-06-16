@@ -167,7 +167,10 @@ All source code in this repo is production grade, even though the scope is a sma
 
 - The chatbot must never produce an em-dash character in any generated reply. Enforce this two ways: state it directly in the system prompt sent to OpenAI, and add a defensive post-processing step on the backend that replaces any em-dash with a comma or period before the reply is returned to the frontend, in case the model ignores the instruction. Because replies stream, apply this safeguard to each streamed chunk as it is emitted, not only to the final assembled text.
 - This rule also applies to any user-facing text Claude Code writes by hand: UI copy, error messages, README content, commit messages. Use commas, periods, or parentheses instead of em-dashes everywhere in this project.
-- The chatbot must answer only from the retrieved context (the ingested PDFs, or the demo corpus when the knowledge base is empty). If the retrieved chunks do not contain the answer, the reply should say so plainly and point to the configured fallback contact rather than guessing or using outside knowledge.
+- Answering has two modes, chosen by whether the knowledge base has any vectors:
+  - When the knowledge base has content (ingested PDFs, or the demo corpus), the chatbot answers only from the retrieved context. If the retrieved chunks do not contain the answer, the reply says so plainly and points to the configured fallback contact rather than guessing.
+  - When the knowledge base is empty (no documents and the demo corpus disabled), the chatbot answers as a general-purpose assistant, like ChatGPT, instead of refusing.
+- The em-dash rule applies in both modes.
 
 ## Environment Variables
 

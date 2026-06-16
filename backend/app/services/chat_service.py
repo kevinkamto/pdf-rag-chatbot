@@ -32,8 +32,7 @@ async def stream_chat(message: str, session_id: str | None) -> AsyncIterator[str
 
     parts: list[str] = []
     try:
-        chunks = await rag_pipeline.retrieve(message)
-        messages = rag_pipeline.build_messages(message, chunks)
+        messages = await rag_pipeline.build_chat_messages(message)
         async for token in rag_pipeline.stream_answer(messages):
             parts.append(token)
             yield _sse("token", {"text": token})

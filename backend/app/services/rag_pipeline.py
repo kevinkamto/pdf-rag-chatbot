@@ -11,7 +11,7 @@ from app.core.openai_client import get_openai_client
 from app.core.text import strip_em_dashes
 from app.models.schemas import RetrievedChunk
 from app.services.embeddings import embed_query
-from app.services.vector_store import search
+from app.services.vector_store import count_points, search
 
 _SYSTEM_PROMPT = (
     "You are a helpful support assistant for the product or service described in the "
@@ -29,11 +29,45 @@ _NO_CONTEXT_NOTE = (
     "that information and refer them to {fallback_contact}."
 )
 
+# Used when the knowledge base is empty: behave like a general-purpose assistant
+# instead of refusing, since there is nothing to ground answers against.
+_GENERIC_SYSTEM_PROMPT = (
+    "You are a helpful, knowledgeable assistant. Answer the user's questions clearly and "
+    "accurately to the best of your ability, like a general-purpose chat assistant. "
+    "Never use an em-dash character in your response. Use commas, periods, or parentheses "
+    "instead."
+)
+
+
+async def knowledge_base_is_empty() -> bool:
+    """True when no vectors are stored, so there is nothing to ground against."""
+    return await count_points() == 0
+
 
 async def retrieve(query: str) -> list[RetrievedChunk]:
     settings = get_settings()
     vector = await embed_query(query)
     return await search(vector, settings.top_k)
+
+
+async def build_chat_messages(query: str) -> list[ChatCompletionMessageParam]:
+    """Choose grounded RAG or generic assistant mode based on the knowledge base.
+
+    When the knowledge base is empty the assistant answers freely; otherwise it
+    answers only from retrieved context (and refuses with the fallback contact
+    when the answer is not present).
+    """
+    if await knowledge_base_is_empty():
+        return generic_messages(query)
+    chunks = await retrieve(query)
+    return build_messages(query, chunks)
+
+
+def generic_messages(query: str) -> list[ChatCompletionMessageParam]:
+    return [
+        {"role": "system", "content": _GENERIC_SYSTEM_PROMPT},
+        {"role": "user", "content": query},
+    ]
 
 
 def build_messages(query: str, chunks: list[RetrievedChunk]) -> list[ChatCompletionMessageParam]:

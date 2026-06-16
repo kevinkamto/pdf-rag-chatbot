@@ -49,10 +49,12 @@ Removing a PDF: delete all Qdrant points whose payload `document_id` matches, th
 Query time:
 - Embed the incoming question with the same embedding model used at ingestion time.
 - Run a similarity search against Qdrant across all active documents, returning the top K chunks (K configurable, default 4).
-- Construct a prompt along these lines:
-  - System message: act as a support assistant, answer only using the provided context, state plainly when the answer is not in the context and point to the configured fallback contact, and never use an em-dash in the response.
-  - Context message: the retrieved chunks joined together, each attributable to its source filename.
-  - User message: the visitor's question.
+- Choose the answering mode by whether the knowledge base has any vectors:
+  - Knowledge base has content: construct a grounded prompt.
+    - System message: act as a support assistant, answer only using the provided context, state plainly when the answer is not in the context and point to the configured fallback contact, and never use an em-dash in the response.
+    - Context message: the retrieved chunks joined together, each attributable to its source filename.
+    - User message: the visitor's question.
+  - Knowledge base is empty (no documents and the demo corpus disabled): answer as a general-purpose assistant, like ChatGPT, with a system prompt that still forbids em-dashes. No retrieval or fallback refusal is applied.
 - Call the OpenAI chat completion endpoint with streaming enabled.
 - As chunks stream back, replace any em-dash characters with a comma or period as a safeguard, and forward each cleaned chunk to the client.
 - Once the stream completes, persist the user message and the full assistant reply against the session id in SQLite.
@@ -144,7 +146,7 @@ handlers). The backend variables below are loaded through `pydantic-settings`
 
 - This is a focused MVP. Resist adding functionality beyond this document without raising it first.
 - Streaming responses are mandatory.
-- The app must work both with and without ingested PDFs (demo corpus fallback).
+- The app must work both with and without ingested PDFs (demo corpus fallback). With an empty knowledge base it answers as a general-purpose assistant rather than refusing.
 - The PDF sidebar and the knowledge base stay in sync: adding a PDF ingests its context, removing a PDF deletes that document's vectors.
 - Multiple PDFs are supported; ingestion is additive and per document, not a full collection rebuild.
 - Qdrant runs as an external, already-installed server, configured only through env vars.

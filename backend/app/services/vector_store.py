@@ -5,15 +5,21 @@ from __future__ import annotations
 import uuid
 
 from qdrant_client import models as qm
+from qdrant_client.http.exceptions import ResponseHandlingException
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.qdrant_client import get_qdrant_client
+from app.core.retry import async_retry
 from app.models.schemas import Chunk, RetrievedChunk
 
 logger = get_logger(__name__)
 
+# Qdrant occasionally drops the first connection (transient); retry those.
+_TRANSIENT: tuple[type[BaseException], ...] = (ResponseHandlingException,)
 
+
+@async_retry(attempts=3, exceptions=_TRANSIENT)
 async def ensure_collection() -> None:
     """Create the collection if it does not already exist."""
     client = get_qdrant_client()
@@ -36,6 +42,7 @@ async def ensure_collection() -> None:
     logger.info("event=collection_created name=%s", settings.qdrant_collection_name)
 
 
+@async_retry(attempts=3, exceptions=_TRANSIENT)
 async def count_points() -> int:
     client = get_qdrant_client()
     settings = get_settings()
@@ -43,6 +50,7 @@ async def count_points() -> int:
     return result.count
 
 
+@async_retry(attempts=3, exceptions=_TRANSIENT)
 async def upsert_chunks(
     document_id: str,
     filename: str,
@@ -71,6 +79,7 @@ async def upsert_chunks(
     await client.upsert(collection_name=settings.qdrant_collection_name, points=points, wait=True)
 
 
+@async_retry(attempts=3, exceptions=_TRANSIENT)
 async def delete_by_document(document_id: str) -> None:
     """Delete every point belonging to a document."""
     client = get_qdrant_client()
@@ -86,6 +95,7 @@ async def delete_by_document(document_id: str) -> None:
     )
 
 
+@async_retry(attempts=3, exceptions=_TRANSIENT)
 async def search(vector: list[float], top_k: int) -> list[RetrievedChunk]:
     """Return the top-k chunks across all documents for a query vector."""
     client = get_qdrant_client()
