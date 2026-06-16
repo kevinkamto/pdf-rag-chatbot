@@ -12,13 +12,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import get_settings
 from app.models.db_models import Base
 
 
-def _make_engine() -> object:
+def _make_engine() -> Engine:
     settings = get_settings()
     url = settings.database_url
     if url.startswith("sqlite:///"):

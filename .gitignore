@@ -1,28 +1,19 @@
-# Secrets and data (never commit)
+# Workspace-level ignores. Backend- and frontend-specific patterns live in
+# backend/.gitignore and frontend/.gitignore respectively.
+
+# Secrets (never commit)
 .env
 *.env
 !.env.example
+
+# Source/uploaded PDFs must never be committed, wherever they land
 *.pdf
-*.sqlite
-*.sqlite3
-*.db
-
-# Python (uv)
-__pycache__/
-*.py[cod]
-.venv/
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
-
-# Node (pnpm)
-node_modules/
-.next/
-out/
-.turbo/
 
 # Agent skills (.claude/skills/) are committed as real files; do not ignore.
 
 # OS / editor
 .DS_Store
 Thumbs.db
+*.swp
+.idea/
+.vscode/

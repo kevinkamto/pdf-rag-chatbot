@@ -11,7 +11,6 @@ from sqlalchemy import delete, select
 from app.db.database import session_scope
 from app.models.db_models import Conversation, Document, Message
 
-
 # --- Conversations & messages ------------------------------------------------
 
 
