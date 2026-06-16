@@ -21,12 +21,6 @@
     "server-only": "^0.0.1",
     "tailwind-merge": "^2.5.4"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "unrs-resolver"
-    ]
-  },
   "devDependencies": {
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",

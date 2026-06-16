@@ -1,3 +1,5 @@
+# Approve native build scripts for these dependencies (pnpm 11+).
+# sharp: Next.js image optimization. unrs-resolver: ESLint module resolution.
 allowBuilds:
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  sharp: true
+  unrs-resolver: true
